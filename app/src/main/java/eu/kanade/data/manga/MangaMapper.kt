@@ -2,6 +2,7 @@ package eu.kanade.data.manga
 
 import eu.kanade.domain.library.model.LibraryManga
 import eu.kanade.domain.manga.model.Manga
+import eu.kanade.domain.manga.model.MangaExtra
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 
 val mangaMapper: (Long, Long, String, String?, String?, String?, List<String>?, String, Long, String?, Boolean, Long?, Long?, Boolean, Long, Long, Long, Long, UpdateStrategy) -> Manga =
@@ -59,5 +60,13 @@ val libraryManga: (Long, Long, String, String?, String?, String?, List<String>?,
             latestUpload = latestUpload,
             chapterFetchedAt = chapterFetchedAt,
             lastRead = lastRead,
+        )
+    }
+
+val mangaExtraMapper: (manga_id: Long, filtered_scanlators: List<String>?) -> MangaExtra =
+    { mangaId, filteredScanlators ->
+        MangaExtra(
+            mangaId = mangaId,
+            filteredScanlators = filteredScanlators.orEmpty(),
         )
     }

@@ -22,7 +22,9 @@ import eu.kanade.domain.chapter.model.ChapterUpdate
 import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
+import eu.kanade.domain.manga.interactor.GetMangaExtra
 import eu.kanade.domain.manga.interactor.GetMangaWithChapters
+import eu.kanade.domain.manga.interactor.SetFilteredScanlators
 import eu.kanade.domain.manga.interactor.SetMangaChapterFlags
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.Manga
@@ -86,7 +88,9 @@ class MangaInfoScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
+    private val getMangaExtra: GetMangaExtra = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
+    private val setFilteredScanlators: SetFilteredScanlators = Injekt.get(),
     private val setMangaChapterFlags: SetMangaChapterFlags = Injekt.get(),
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
@@ -152,12 +156,23 @@ class MangaInfoScreenModel(
                 }
         }
 
+        coroutineScope.launchIO {
+            getMangaExtra.subscribe(mangaId)
+                .distinctUntilChanged()
+                .collectLatest { mangaExtra ->
+                    updateSuccessState {
+                        it.copy(filteredScanlators = mangaExtra.filteredScanlators)
+                    }
+                }
+        }
+
         observeDownloads()
 
         coroutineScope.launchIO {
             val manga = getMangaAndChapters.awaitManga(mangaId)
             val chapters = getMangaAndChapters.awaitChapters(mangaId)
                 .toChapterItemsParams(manga)
+            val filteredScanlators = getMangaExtra.await(mangaId).filteredScanlators
 
             if (!manga.favorite) {
                 setMangaDefaultChapterFlags.await(manga)
@@ -173,6 +188,7 @@ class MangaInfoScreenModel(
                     source = Injekt.get<SourceManager>().getOrStub(manga.source),
                     isFromSource = isFromSource,
                     chapters = chapters,
+                    filteredScanlators = filteredScanlators,
                     isRefreshingData = needRefreshInfo || needRefreshChapter,
                     dialog = null,
                 )
@@ -998,6 +1014,12 @@ class MangaInfoScreenModel(
             }
         }
     }
+
+    fun setFilteredScanlators(filteredScanlators: List<String>) {
+        coroutineScope.launchIO {
+            setFilteredScanlators.await(mangaId, filteredScanlators)
+        }
+    }
 }
 
 sealed class MangaScreenState {
@@ -1010,6 +1032,7 @@ sealed class MangaScreenState {
         val source: Source,
         val isFromSource: Boolean,
         val chapters: List<ChapterItem>,
+        val filteredScanlators: List<String>,
         val trackItems: List<TrackItem> = emptyList(),
         val isRefreshingData: Boolean = false,
         val dialog: MangaInfoScreenModel.Dialog? = null,
@@ -1017,6 +1040,15 @@ sealed class MangaScreenState {
 
         val processedChapters: Sequence<ChapterItem>
             get() = chapters.applyFilters(manga)
+
+        val availableScanlators: List<String>
+            get() {
+                return chapters
+                    .mapNotNull { item ->
+                        item.chapter.scanlator?.takeUnless { it.isBlank() }
+                    }
+                    .distinct()
+            }
 
         val trackingAvailable: Boolean
             get() = trackItems.isNotEmpty()
@@ -1034,6 +1066,7 @@ sealed class MangaScreenState {
             val downloadedFilter = manga.downloadedFilter
             val bookmarkedFilter = manga.bookmarkedFilter
             return asSequence()
+                .filterNot { it.chapter.scanlator in filteredScanlators }
                 .filter { (chapter) ->
                     when (unreadFilter) {
                         TriStateFilter.DISABLED -> true

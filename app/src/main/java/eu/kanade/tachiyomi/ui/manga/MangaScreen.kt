@@ -9,8 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +37,7 @@ import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.DownloadCustomAmountDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
+import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.R
@@ -131,6 +134,8 @@ class MangaScreen(
             onInvertSelection = screenModel::invertSelection,
         )
 
+        var showScanlatorsDialog by remember { mutableStateOf(false) }
+
         val onDismissRequest = { screenModel.dismissDialog() }
         when (val dialog = (state as? MangaScreenState.Success)?.dialog) {
             null -> {}
@@ -180,6 +185,9 @@ class MangaScreen(
                 onSortModeChanged = screenModel::setSorting,
                 onDisplayModeChanged = screenModel::setDisplayMode,
                 onSetAsDefault = screenModel::setCurrentSettingsAsDefault,
+                onScanlatorFilterClicked = {
+                    showScanlatorsDialog = true
+                }.takeUnless { successState.availableScanlators.isEmpty() },
             )
             MangaInfoScreenModel.Dialog.TrackSheet -> {
                 NavigatorAdaptiveSheet(
@@ -218,6 +226,15 @@ class MangaScreen(
                     LoadingScreen(Modifier.systemBarsPadding())
                 }
             }
+        }
+
+        if (showScanlatorsDialog) {
+            ScanlatorFilterDialog(
+                availableScanlator = successState.availableScanlators,
+                filteredScanlators = successState.filteredScanlators,
+                onDismissRequest = { showScanlatorsDialog = false },
+                onConfirm = screenModel::setFilteredScanlators,
+            )
         }
     }
 

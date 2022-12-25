@@ -13,6 +13,7 @@
     <string name="chapters">Chapters</string>
     <string name="track">Tracking</string>
     <string name="history">History</string>
+    <string name="scanlator">Scanlator</string>
 
     <!-- Activities and fragments labels (toolbar title) -->
     <string name="label_more">More</string>
@@ -670,6 +671,7 @@
     <string name="set_chapter_settings_as_default">Set as default</string>
     <string name="no_chapters_error">No chapters found</string>
     <string name="are_you_sure">Are you sure?</string>
+    <string name="filter_scanlators">Filter scanlators</string>
 
     <!-- Tracking Screen -->
     <string name="tracker_anilist" translatable="false">AniList</string>

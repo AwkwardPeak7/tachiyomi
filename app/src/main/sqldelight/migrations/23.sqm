@@ -1,0 +1,6 @@
+CREATE TABLE mangas_extra(
+    manga_id INTEGER NOT NULL PRIMARY KEY,
+    filtered_scanlators TEXT,
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+    ON DELETE CASCADE
+);

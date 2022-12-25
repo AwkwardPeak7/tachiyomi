@@ -1,0 +1,21 @@
+import kotlin.collections.List;
+
+CREATE TABLE mangas_extra(
+    manga_id INTEGER NOT NULL PRIMARY KEY,
+    filtered_scanlators TEXT AS List<String>,
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+    ON DELETE CASCADE
+);
+
+getMangaExtra:
+SELECT *
+FROM mangas_extra
+WHERE manga_id = :mangaId;
+
+setFilteredScanlators:
+INSERT INTO mangas_extra(manga_id, filtered_scanlators)
+VALUES (:mangaId, :filteredScanlators)
+ON CONFLICT(manga_id)
+DO UPDATE
+SET filtered_scanlators = :filteredScanlators
+WHERE manga_id = :mangaId;

@@ -3,15 +3,18 @@ package eu.kanade.presentation.manga
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PeopleAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ fun ChapterSettingsDialog(
     onDownloadFilterChanged: (TriStateFilter) -> Unit,
     onUnreadFilterChanged: (TriStateFilter) -> Unit,
     onBookmarkedFilterChanged: (TriStateFilter) -> Unit,
+    onScanlatorFilterClicked: (() -> Unit)?,
     onSortModeChanged: (Long) -> Unit,
     onDisplayModeChanged: (Long) -> Unit,
     onSetAsDefault: (applyToExistingManga: Boolean) -> Unit,
@@ -88,6 +92,7 @@ fun ChapterSettingsDialog(
                         onUnreadFilterChanged = onUnreadFilterChanged,
                         bookmarkedFilter = manga?.bookmarkedFilter ?: TriStateFilter.DISABLED,
                         onBookmarkedFilterChanged = onBookmarkedFilterChanged,
+                        onScanlatorFilterClicked = onScanlatorFilterClicked,
                     )
                 }
                 1 -> {
@@ -158,13 +163,14 @@ private fun SetAsDefaultDialog(
 }
 
 @Composable
-private fun ColumnScope.FilterPage(
+private fun FilterPage(
     downloadFilter: TriStateFilter,
     onDownloadFilterChanged: ((TriStateFilter) -> Unit)?,
     unreadFilter: TriStateFilter,
     onUnreadFilterChanged: (TriStateFilter) -> Unit,
     bookmarkedFilter: TriStateFilter,
     onBookmarkedFilterChanged: (TriStateFilter) -> Unit,
+    onScanlatorFilterClicked: (() -> Unit)?,
 ) {
     TriStateItem(
         label = stringResource(R.string.label_downloaded),
@@ -181,10 +187,38 @@ private fun ColumnScope.FilterPage(
         state = bookmarkedFilter,
         onClick = onBookmarkedFilterChanged,
     )
+    if (onScanlatorFilterClicked != null) {
+        ScanlatorFilterItem(
+            onClick = onScanlatorFilterClicked,
+        )
+    }
 }
 
 @Composable
-private fun ColumnScope.SortPage(
+fun ScanlatorFilterItem(
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .fillMaxWidth()
+            .padding(horizontal = TabbedDialogPaddings.Horizontal, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.PeopleAlt,
+            contentDescription = null,
+        )
+        Text(
+            text = stringResource(R.string.scanlator),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun SortPage(
     sortingMode: Long,
     sortDescending: Boolean,
     onItemSelected: (Long) -> Unit,
@@ -207,7 +241,7 @@ private fun ColumnScope.SortPage(
 }
 
 @Composable
-private fun ColumnScope.DisplayPage(
+private fun DisplayPage(
     displayMode: Long,
     onItemSelected: (Long) -> Unit,
 ) {
