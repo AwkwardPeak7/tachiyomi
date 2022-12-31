@@ -9,7 +9,6 @@ import com.squareup.sqldelight.android.AndroidSqliteDriver
 import com.squareup.sqldelight.db.SqlDriver
 import data.History
 import data.Mangas
-import data.Mangas_extra
 import eu.kanade.data.AndroidDatabaseHandler
 import eu.kanade.data.DatabaseHandler
 import eu.kanade.data.dateAdapter
@@ -94,9 +93,6 @@ class AppModule(val app: Application) : InjektModule {
                 mangasAdapter = Mangas.Adapter(
                     genreAdapter = listOfStringsAdapter,
                     update_strategyAdapter = updateStrategyAdapter,
-                ),
-                mangas_extraAdapter = Mangas_extra.Adapter(
-                    filtered_scanlatorsAdapter = listOfStringsAdapter,
                 ),
             )
         }

@@ -13,6 +13,7 @@ import eu.kanade.data.chapter.NoChaptersException
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
 import eu.kanade.domain.category.model.Category
+import eu.kanade.domain.chapter.interactor.GetAvailableScanlators
 import eu.kanade.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
@@ -22,9 +23,9 @@ import eu.kanade.domain.chapter.model.ChapterUpdate
 import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
-import eu.kanade.domain.manga.interactor.GetMangaExtra
+import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.GetMangaWithChapters
-import eu.kanade.domain.manga.interactor.SetFilteredScanlators
+import eu.kanade.domain.manga.interactor.SetExcludedScanlators
 import eu.kanade.domain.manga.interactor.SetMangaChapterFlags
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.Manga
@@ -88,9 +89,9 @@ class MangaInfoScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
-    private val getMangaExtra: GetMangaExtra = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
-    private val setFilteredScanlators: SetFilteredScanlators = Injekt.get(),
+    private val getAvailableScanlators: GetAvailableScanlators = Injekt.get(),
+    private val setExcludedScanlators: SetExcludedScanlators = Injekt.get(),
     private val setMangaChapterFlags: SetMangaChapterFlags = Injekt.get(),
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
@@ -98,6 +99,7 @@ class MangaInfoScreenModel(
     private val updateManga: UpdateManga = Injekt.get(),
     private val syncChaptersWithSource: SyncChaptersWithSource = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
+    private val getExcludedScanlators: GetExcludedScanlators = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
@@ -157,11 +159,21 @@ class MangaInfoScreenModel(
         }
 
         coroutineScope.launchIO {
-            getMangaExtra.subscribe(mangaId)
+            getExcludedScanlators.subscribe(mangaId)
                 .distinctUntilChanged()
-                .collectLatest { mangaExtra ->
+                .collectLatest { excludedScanlators ->
                     updateSuccessState {
-                        it.copy(filteredScanlators = mangaExtra.filteredScanlators)
+                        it.copy(excludedScanlators = excludedScanlators)
+                    }
+                }
+        }
+
+        coroutineScope.launchIO {
+            getAvailableScanlators.subscribe(mangaId)
+                .distinctUntilChanged()
+                .collectLatest { availableScanlators ->
+                    updateSuccessState {
+                        it.copy(availableScanlators = availableScanlators)
                     }
                 }
         }
@@ -172,7 +184,6 @@ class MangaInfoScreenModel(
             val manga = getMangaAndChapters.awaitManga(mangaId)
             val chapters = getMangaAndChapters.awaitChapters(mangaId)
                 .toChapterItemsParams(manga)
-            val filteredScanlators = getMangaExtra.await(mangaId).filteredScanlators
 
             if (!manga.favorite) {
                 setMangaDefaultChapterFlags.await(manga)
@@ -188,7 +199,8 @@ class MangaInfoScreenModel(
                     source = Injekt.get<SourceManager>().getOrStub(manga.source),
                     isFromSource = isFromSource,
                     chapters = chapters,
-                    filteredScanlators = filteredScanlators,
+                    availableScanlators = getAvailableScanlators.await(mangaId),
+                    excludedScanlators = getExcludedScanlators.await(mangaId),
                     isRefreshingData = needRefreshInfo || needRefreshChapter,
                     dialog = null,
                 )
@@ -1015,9 +1027,9 @@ class MangaInfoScreenModel(
         }
     }
 
-    fun setFilteredScanlators(filteredScanlators: List<String>) {
+    fun setExcludedScanlators(excludedScanlators: List<String>) {
         coroutineScope.launchIO {
-            setFilteredScanlators.await(mangaId, filteredScanlators)
+            setExcludedScanlators.await(mangaId, excludedScanlators)
         }
     }
 }
@@ -1032,7 +1044,8 @@ sealed class MangaScreenState {
         val source: Source,
         val isFromSource: Boolean,
         val chapters: List<ChapterItem>,
-        val filteredScanlators: List<String>,
+        val availableScanlators: List<String>,
+        val excludedScanlators: List<String>,
         val trackItems: List<TrackItem> = emptyList(),
         val isRefreshingData: Boolean = false,
         val dialog: MangaInfoScreenModel.Dialog? = null,
@@ -1040,15 +1053,6 @@ sealed class MangaScreenState {
 
         val processedChapters: Sequence<ChapterItem>
             get() = chapters.applyFilters(manga)
-
-        val availableScanlators: List<String>
-            get() {
-                return chapters
-                    .mapNotNull { item ->
-                        item.chapter.scanlator?.takeUnless { it.isBlank() }
-                    }
-                    .distinct()
-            }
 
         val trackingAvailable: Boolean
             get() = trackItems.isNotEmpty()
@@ -1066,7 +1070,6 @@ sealed class MangaScreenState {
             val downloadedFilter = manga.downloadedFilter
             val bookmarkedFilter = manga.bookmarkedFilter
             return asSequence()
-                .filterNot { it.chapter.scanlator in filteredScanlators }
                 .filter { (chapter) ->
                     when (unreadFilter) {
                         TriStateFilter.DISABLED -> true

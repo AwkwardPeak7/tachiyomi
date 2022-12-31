@@ -19,6 +19,7 @@ import eu.kanade.domain.category.interactor.SetMangaCategories
 import eu.kanade.domain.category.interactor.SetSortModeForCategory
 import eu.kanade.domain.category.interactor.UpdateCategory
 import eu.kanade.domain.category.repository.CategoryRepository
+import eu.kanade.domain.chapter.interactor.GetAvailableScanlators
 import eu.kanade.domain.chapter.interactor.GetChapter
 import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SetMangaDefaultChapterFlags
@@ -39,14 +40,14 @@ import eu.kanade.domain.history.interactor.RemoveHistory
 import eu.kanade.domain.history.interactor.UpsertHistory
 import eu.kanade.domain.history.repository.HistoryRepository
 import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
+import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.GetFavorites
 import eu.kanade.domain.manga.interactor.GetLibraryManga
 import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.GetMangaExtra
 import eu.kanade.domain.manga.interactor.GetMangaWithChapters
 import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.ResetViewerFlags
-import eu.kanade.domain.manga.interactor.SetFilteredScanlators
+import eu.kanade.domain.manga.interactor.SetExcludedScanlators
 import eu.kanade.domain.manga.interactor.SetMangaChapterFlags
 import eu.kanade.domain.manga.interactor.SetMangaViewerFlags
 import eu.kanade.domain.manga.interactor.UpdateManga
@@ -103,8 +104,9 @@ class DomainModule : InjektModule {
         addFactory { NetworkToLocalManga(get()) }
         addFactory { UpdateManga(get()) }
         addFactory { SetMangaCategories(get()) }
-        addFactory { GetMangaExtra(get()) }
-        addFactory { SetFilteredScanlators(get()) }
+
+        addFactory { GetExcludedScanlators(get()) }
+        addFactory { SetExcludedScanlators(get()) }
 
         addSingletonFactory<TrackRepository> { TrackRepositoryImpl(get()) }
         addFactory { DeleteTrack(get()) }
@@ -120,6 +122,7 @@ class DomainModule : InjektModule {
         addFactory { ShouldUpdateDbChapter() }
         addFactory { SyncChaptersWithSource(get(), get(), get(), get()) }
         addFactory { SyncChaptersWithTrackServiceTwoWay(get(), get()) }
+        addFactory { GetAvailableScanlators(get()) }
 
         addSingletonFactory<HistoryRepository> { HistoryRepositoryImpl(get()) }
         addFactory { GetHistory(get()) }

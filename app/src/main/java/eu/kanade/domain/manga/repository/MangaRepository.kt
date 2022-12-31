@@ -2,7 +2,6 @@ package eu.kanade.domain.manga.repository
 
 import eu.kanade.domain.library.model.LibraryManga
 import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.MangaExtra
 import eu.kanade.domain.manga.model.MangaUpdate
 import kotlinx.coroutines.flow.Flow
 
@@ -29,12 +28,6 @@ interface MangaRepository {
     suspend fun resetViewerFlags(): Boolean
 
     suspend fun setMangaCategories(mangaId: Long, categoryIds: List<Long>)
-
-    suspend fun getMangaExtra(mangaId: Long): MangaExtra?
-
-    fun getMangaExtraAsFlow(mangaId: Long): Flow<MangaExtra?>
-
-    suspend fun setFilteredScanlators(mangaId: Long, filteredScanlators: List<String>)
 
     suspend fun insert(manga: Manga): Long?
 

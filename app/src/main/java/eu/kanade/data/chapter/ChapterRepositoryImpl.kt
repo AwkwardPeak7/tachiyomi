@@ -81,6 +81,18 @@ class ChapterRepositoryImpl(
         return handler.awaitList { chaptersQueries.getChaptersByMangaId(mangaId, chapterMapper) }
     }
 
+    override suspend fun getScanlatorsByMangaId(mangaId: Long): List<String> {
+        return handler.awaitList {
+            chaptersQueries.getScanlatorsByMangaId(mangaId) { it.orEmpty() }
+        }
+    }
+
+    override fun getScanlatorsByMangaIdAsFlow(mangaId: Long): Flow<List<String>> {
+        return handler.subscribeToList {
+            chaptersQueries.getScanlatorsByMangaId(mangaId) { it.orEmpty() }
+        }
+    }
+
     override suspend fun getBookmarkedChaptersByMangaId(mangaId: Long): List<Chapter> {
         return handler.awaitList { chaptersQueries.getBookmarkedChaptersByMangaId(mangaId, chapterMapper) }
     }

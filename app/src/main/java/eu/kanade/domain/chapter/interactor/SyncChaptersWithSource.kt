@@ -5,6 +5,7 @@ import eu.kanade.data.chapter.NoChaptersException
 import eu.kanade.domain.chapter.model.Chapter
 import eu.kanade.domain.chapter.model.toChapterUpdate
 import eu.kanade.domain.chapter.repository.ChapterRepository
+import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.Manga
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -28,6 +29,7 @@ class SyncChaptersWithSource(
     private val updateManga: UpdateManga = Injekt.get(),
     private val updateChapter: UpdateChapter = Injekt.get(),
     private val getChapterByMangaId: GetChapterByMangaId = Injekt.get(),
+    private val getExcludedScanlators: GetExcludedScanlators = Injekt.get(),
 ) {
 
     /**
@@ -189,6 +191,9 @@ class SyncChaptersWithSource(
 
         val reAddedUrls = reAdded.map { it.url }.toHashSet()
 
-        return updatedToAdd.filterNot { it.url in reAddedUrls }
+        val excludedScanlators = getExcludedScanlators.await(manga.id).toHashSet()
+
+        return updatedToAdd
+            .filterNot { it.url in reAddedUrls || it.scanlator in excludedScanlators }
     }
 }

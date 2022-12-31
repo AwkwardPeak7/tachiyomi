@@ -671,7 +671,7 @@
     <string name="set_chapter_settings_as_default">Set as default</string>
     <string name="no_chapters_error">No chapters found</string>
     <string name="are_you_sure">Are you sure?</string>
-    <string name="filter_scanlators">Filter scanlators</string>
+    <string name="exclude_scanlators">Exclude scanlators</string>
 
     <!-- Tracking Screen -->
     <string name="tracker_anilist" translatable="false">AniList</string>
