@@ -19,21 +19,25 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
         val screenModel = rememberScreenModel { MigrateSearchScreenModel(mangaId = mangaId) }
         val state by screenModel.state.collectAsState()
 
-        MigrateSearchScreen(
-            navigateUp = navigator::pop,
-            state = state,
-            getManga = { screenModel.getManga(it) },
-            onChangeSearchQuery = screenModel::updateSearchQuery,
-            onSearch = screenModel::search,
-            onClickSource = {
-                if (!screenModel.incognitoMode.get()) {
-                    screenModel.lastUsedSourceId.set(it.id)
-                }
-                navigator.push(SourceSearchScreen(state.manga!!, it.id, state.searchQuery))
-            },
-            onClickItem = { screenModel.setDialog(MigrateSearchDialog.Migrate(it)) },
-            onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },
-        )
+        if (state.items.size == 1) {
+            navigator.replace(SourceSearchScreen(state.manga!!, state.items.keys.first().id, state.searchQuery))
+        } else {
+            MigrateSearchScreen(
+                navigateUp = navigator::pop,
+                state = state,
+                getManga = { screenModel.getManga(it) },
+                onChangeSearchQuery = screenModel::updateSearchQuery,
+                onSearch = screenModel::search,
+                onClickSource = {
+                    if (!screenModel.incognitoMode.get()) {
+                        screenModel.lastUsedSourceId.set(it.id)
+                    }
+                    navigator.push(SourceSearchScreen(state.manga!!, it.id, state.searchQuery))
+                },
+                onClickItem = { screenModel.setDialog(MigrateSearchDialog.Migrate(it)) },
+                onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },
+            )
+        }
 
         when (val dialog = state.dialog) {
             is MigrateSearchDialog.Migrate -> {

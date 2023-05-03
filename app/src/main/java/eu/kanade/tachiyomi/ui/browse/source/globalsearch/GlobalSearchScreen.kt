@@ -54,6 +54,8 @@ class GlobalSearchScreen(
                     else -> showSingleLoadingScreen = false
                 }
             }
+        } else if (state.items.size == 1) {
+            navigator.replace(BrowseSourceScreen(state.items.keys.first().id, state.searchQuery))
         } else {
             GlobalSearchScreen(
                 state = state,
