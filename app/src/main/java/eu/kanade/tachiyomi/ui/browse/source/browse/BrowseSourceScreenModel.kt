@@ -150,7 +150,7 @@ class BrowseSourceScreenModel(
     }
 
     fun setListing(listing: Listing) {
-        mutableState.update { it.copy(listing = listing, toolbarQuery = null) }
+        mutableState.update { it.copy(listing = listing) }
     }
 
     fun setFilters(filters: FilterList) {
